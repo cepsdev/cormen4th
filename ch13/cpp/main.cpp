@@ -3,12 +3,12 @@
 #include <vector>
 // A straighforward implementation of red-black trees
 namespace alg{
+
 struct rb_tree{
   using color_t = uint_least8_t; struct node;
- private:
   using val_t = int;
   using np_t = uint64_t;
- public: 
+  np_t root_ = np_t{};
   static constexpr bool is_red(color_t c)  {return (c & 1) == 1;}
   static constexpr bool is_black(color_t c)  {return (c & 1) == 0;}
   static constexpr void set_black(color_t& c)  {c &= 0xFE;}
@@ -21,12 +21,52 @@ struct rb_tree{
   rb_tree(std::initializer_list<node> l){ 
     v.reserve(l.size() + 1);
     v.push_back({0,0,0,val_t{},color_t{}});
-    v.insert(v.begin()+1,l);
+    v.insert(v.end(),l.begin(), l.end());
+    root_ = l.size() ? node_size() : np_t{};
   }
-  np_t nil()  {return np_t{};}
-  node & ref(np_t n){return v[n];}
+  np_t nil() const  {return np_t{};}
+  node & deref(np_t n){return *(node*)( (char*)v.data()+ n);}
+  node const & deref(np_t n) const {return *(node*)( (char*)v.data()+ n);}
   size_t size() const {return v.size() - 1;}
+  size_t root() const {return root_;}
+  void left_rotate(np_t x){
+    auto& xref = deref(x);
+    auto y = xref.r;
+    if (y == nil()) return; 
+    auto& yref = deref(y);
+    xref.r = yref.l;deref(yref.l).p = x;
+
+    if (x == root())
+     root_ = y;
+    else if(deref(xref.p).l == x) deref(xref.p).l = y;
+    else deref(xref.p).r = y;
+
+    yref.l = x;
+    yref.p = xref.p;
+    xref.p = y;
+    xref.p = y;
+  }
+  // Actual size used to store a node could differ from size required by the structure node.
+  static constexpr size_t node_size() { return sizeof(node);}
 };
+
+static void dump(std::ostream& os, rb_tree::np_t np, rb_tree const & rb ){
+ if (np == rb.nil()) return;
+ bool leaf = rb.deref(np).l == rb.nil() && rb.deref(np).r == rb.nil(); 
+ if (!leaf) os << "(";
+ os << rb.deref(np).val; os << "[parent=" << rb.deref(rb.deref(np).p).val << "]";
+ if (rb.root() == np) os << "(ROOT)"; 
+ if (!leaf) os << " ";
+ dump(os,rb.deref(np).l,rb);
+ if (rb.deref(np).l != rb.nil() && rb.deref(rb.deref(np).l).l == rb.nil() && rb.deref(rb.deref(np).l).r == rb.nil()  ) os << " ";
+ dump(os,rb.deref(np).r,rb);
+ if (!leaf) os << ")";
+}
+
+std::ostream& operator << (std::ostream& os, rb_tree const & rb){
+ dump(os,rb.root(), rb );
+ return os;
+}
 
 }
 
@@ -46,12 +86,24 @@ static void test_color_ops(){
 }
 
 static void test_left_rotate(){
+  /*
+              left rot.
+      2          ==>         4
+    /  \      right rot.    / \
+   1    4        <==       2   5
+       / \                / \
+      3   5              1   3 
+  */
     alg::rb_tree rb({
-        {0,0,0,1,0}        
+        {.p = 0,.l=alg::rb_tree::node_size()*2, .r = alg::rb_tree::node_size()*3, .val=2, .c = 0},
+        {.p = alg::rb_tree::node_size(),.l=0, .r = 0, .val=1, .c = 0},
+        {.p = alg::rb_tree::node_size(),.l=alg::rb_tree::node_size() * 4, .r = alg::rb_tree::node_size()*5, .val=4, .c = 0},
+        {.p = alg::rb_tree::node_size()*3,.l= 0, .r = 0, .val=3, .c = 0},
+        {.p = alg::rb_tree::node_size()*3,.l= 0, .r = 0, .val=5, .c = 0}
     });
-    std::cout<< rb.size() << '\n';
-    alg::rb_tree rb2;
-    std::cout<< rb2.size() << '\n';
+  std::cout << rb << '\n';
+  rb.left_rotate(alg::rb_tree::node_size());
+  std::cout << rb << '\n';
 }
 
 int main(){

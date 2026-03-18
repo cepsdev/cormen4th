@@ -1,6 +1,10 @@
 #include<iostream>
 #include <cstdint>
 #include <vector>
+#include <sstream>
+#include <string>
+#include <cstring>
+
 // A straighforward implementation of red-black trees
 namespace alg{
 
@@ -31,24 +35,24 @@ struct rb_tree{
   size_t root() const {return root_;}
   
   void left_rotate(np_t x){
+    // The state of the sentinel nil() maybe changed
     auto& xref = deref(x);
     auto y = xref.r;
     if (y == nil()) return; 
     auto& yref = deref(y);
-    xref.r = yref.l;deref(yref.l).p = x;
-
+    xref.r = yref.l;
+    deref(yref.l).p = x;
     if (x == root())
      root_ = y;
     else if(deref(xref.p).l == x) deref(xref.p).l = y;
     else deref(xref.p).r = y;
-
     yref.l = x;
     yref.p = xref.p;
-    xref.p = y;
     xref.p = y;
   }
 
   void right_rotate(np_t x){
+    // The state of the sentinel nil() maybe changed
     auto& refx{deref(x)};
     if (refx.l == nil()) return;
     auto y{refx.l};
@@ -67,7 +71,7 @@ struct rb_tree{
 };
 
 static void dump(std::ostream& os, rb_tree::np_t np, rb_tree const & rb ){
- if (np == rb.nil()) return;
+ if (np == rb.nil()) {os << " nil";return;} 
  bool leaf = rb.deref(np).l == rb.nil() && rb.deref(np).r == rb.nil(); 
  if (!leaf) os << "(";
  os << rb.deref(np).val; os << "[parent=" << rb.deref(rb.deref(np).p).val << "]";
@@ -122,6 +126,83 @@ static void test_left_rotate(){
   std::cout << rb_a << '\n';
   rb_a.right_rotate(alg::rb_tree::node_size()*3);
   std::cout << rb_a << '\n';
+  {
+      alg::rb_tree rb_a({
+        {.p = 0,.l=alg::rb_tree::node_size()*2, .r = alg::rb_tree::node_size()*3, .val=2, .c = 0},
+        {.p = alg::rb_tree::node_size(),.l=0, .r = 0, .val=1, .c = 0},
+        {.p = alg::rb_tree::node_size(),.l=alg::rb_tree::node_size() * 4, .r = alg::rb_tree::node_size()*5, .val=4, .c = 0},
+        {.p = alg::rb_tree::node_size()*3,.l= 0, .r = 0, .val=3, .c = 0},
+        {.p = alg::rb_tree::node_size()*3,.l= 0, .r = 0, .val=5, .c = 0}
+    });
+
+    std::stringstream s1;std::stringstream s2;
+    s1 << rb_a;
+    rb_a.left_rotate(alg::rb_tree::node_size());
+    rb_a.right_rotate(alg::rb_tree::node_size()*3);
+    s2 << rb_a;
+    std::cerr << s1.str() << '\n';
+    std::cerr << s2.str() << '\n';
+    if (s1.str() != s2.str()) std::cerr << "right_rotate(left_rotate()) != id";
+  }
+  {
+      alg::rb_tree rb_a({
+        {.p = 0,.l = 0, .r = alg::rb_tree::node_size()*2,.val=10,.c=0},
+        {.p = alg::rb_tree::node_size(),.l=alg::rb_tree::node_size()*3, .r = alg::rb_tree::node_size()*4, .val=2, .c = 0},
+        {.p = alg::rb_tree::node_size()*2,.l=0, .r = 0, .val=1, .c = 0},
+        {.p = alg::rb_tree::node_size()*2,.l=alg::rb_tree::node_size() * 5, .r = alg::rb_tree::node_size()*6, .val=4, .c = 0},
+        {.p = alg::rb_tree::node_size()*4,.l= 0, .r = 0, .val=3, .c = 0},
+        {.p = alg::rb_tree::node_size()*4,.l= 0, .r = 0, .val=5, .c = 0}
+    });
+
+    std::stringstream s1;std::stringstream s2;
+    s1 << rb_a;
+    rb_a.left_rotate(alg::rb_tree::node_size()*2);
+    rb_a.right_rotate(alg::rb_tree::node_size()*4);
+    s2 << rb_a;
+    std::cerr << s1.str() << '\n';
+    std::cerr << s2.str() << '\n';
+    if (s1.str() != s2.str()) std::cerr << "right_rotate(left_rotate()) != id";
+  }  
+  {
+      alg::rb_tree rb_a({
+        {.p = 0,.l = alg::rb_tree::node_size()*2, .r = 0 ,.val=10,.c=0},
+        {.p = alg::rb_tree::node_size(),.l=alg::rb_tree::node_size()*3, .r = alg::rb_tree::node_size()*4, .val=2, .c = 0},
+        {.p = alg::rb_tree::node_size()*2,.l=0, .r = 0, .val=1, .c = 0},
+        {.p = alg::rb_tree::node_size()*2,.l=alg::rb_tree::node_size() * 5, .r = alg::rb_tree::node_size()*6, .val=4, .c = 0},
+        {.p = alg::rb_tree::node_size()*4,.l= 0, .r = 0, .val=3, .c = 0},
+        {.p = alg::rb_tree::node_size()*4,.l= 0, .r = 0, .val=5, .c = 0}
+    });
+
+    std::stringstream s1;std::stringstream s2;
+    s1 << rb_a;
+    rb_a.left_rotate(alg::rb_tree::node_size()*2);
+    rb_a.right_rotate(alg::rb_tree::node_size()*4);
+    s2 << rb_a;
+    std::cerr << s1.str() << '\n';
+    std::cerr << s2.str() << '\n';
+    if (s1.str() != s2.str()) std::cerr << "right_rotate(left_rotate()) != id";
+  }  
+  {
+      alg::rb_tree rb_a({
+        {.p = 0,.l = alg::rb_tree::node_size()*2, .r = alg::rb_tree::node_size() * 7 ,.val=10,.c=0},
+        {.p = alg::rb_tree::node_size(),.l=alg::rb_tree::node_size()*3, .r = alg::rb_tree::node_size()*4, .val=2, .c = 0},
+        {.p = alg::rb_tree::node_size()*2,.l=0, .r = 0, .val=1, .c = 0},
+        {.p = alg::rb_tree::node_size()*2,.l=alg::rb_tree::node_size() * 5, .r = alg::rb_tree::node_size()*6, .val=4, .c = 0},
+        {.p = alg::rb_tree::node_size()*4,.l= 0, .r = 0, .val=3, .c = 0},
+        {.p = alg::rb_tree::node_size()*4,.l= 0, .r = 0, .val=5, .c = 0},
+        {.p = alg::rb_tree::node_size(),.l= 0, .r = 0, .val=11, .c = 0}
+    });
+
+    std::stringstream s1;std::stringstream s2;
+    s1 << rb_a;
+    rb_a.left_rotate(alg::rb_tree::node_size()*2);
+    rb_a.right_rotate(alg::rb_tree::node_size()*4);
+    s2 << rb_a;
+    std::cerr << s1.str() << '\n';
+    std::cerr << s2.str() << '\n';
+    if (s1.str() != s2.str()) std::cerr << "right_rotate(left_rotate()) != id";
+  }  
+
 }
 
 int main(){

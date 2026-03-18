@@ -29,6 +29,7 @@ struct rb_tree{
   node const & deref(np_t n) const {return *(node*)( (char*)v.data()+ n);}
   size_t size() const {return v.size() - 1;}
   size_t root() const {return root_;}
+  
   void left_rotate(np_t x){
     auto& xref = deref(x);
     auto y = xref.r;
@@ -45,6 +46,21 @@ struct rb_tree{
     yref.p = xref.p;
     xref.p = y;
     xref.p = y;
+  }
+
+  void right_rotate(np_t x){
+    auto& refx{deref(x)};
+    if (refx.l == nil()) return;
+    auto y{refx.l};
+    auto& refy{deref(y)};
+    refx.l = refy.r;
+    refy.r = x;
+    if (root() == x) root_ = y;
+    else if (deref(refx.p).l == x) deref(refx.p).l = y;
+    else deref(refx.p).r = y;
+    refy.p = refx.p;
+    refx.p = y;
+    deref(refx.l).p = x;
   }
   // Actual size used to store a node could differ from size required by the structure node.
   static constexpr size_t node_size() { return sizeof(node);}
@@ -87,23 +103,25 @@ static void test_color_ops(){
 
 static void test_left_rotate(){
   /*
-              left rot.
+  A:          left rot.   B:
       2          ==>         4
     /  \      right rot.    / \
    1    4        <==       2   5
        / \                / \
       3   5              1   3 
   */
-    alg::rb_tree rb({
+  alg::rb_tree rb_a({
         {.p = 0,.l=alg::rb_tree::node_size()*2, .r = alg::rb_tree::node_size()*3, .val=2, .c = 0},
         {.p = alg::rb_tree::node_size(),.l=0, .r = 0, .val=1, .c = 0},
         {.p = alg::rb_tree::node_size(),.l=alg::rb_tree::node_size() * 4, .r = alg::rb_tree::node_size()*5, .val=4, .c = 0},
         {.p = alg::rb_tree::node_size()*3,.l= 0, .r = 0, .val=3, .c = 0},
         {.p = alg::rb_tree::node_size()*3,.l= 0, .r = 0, .val=5, .c = 0}
     });
-  std::cout << rb << '\n';
-  rb.left_rotate(alg::rb_tree::node_size());
-  std::cout << rb << '\n';
+  std::cout << rb_a << '\n';
+  rb_a.left_rotate(alg::rb_tree::node_size());
+  std::cout << rb_a << '\n';
+  rb_a.right_rotate(alg::rb_tree::node_size()*3);
+  std::cout << rb_a << '\n';
 }
 
 int main(){

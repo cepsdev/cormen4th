@@ -66,6 +66,16 @@ struct rb_tree{
     refx.p = y;
     deref(refx.l).p = x;
   }
+
+  void insert(np_t x){
+
+  }
+
+  void insert(val_t val){
+    auto x = v.size()*node_size();
+    v.push_back({.p = 0,.l=0,.r=0,.val=val,.c=0});
+    insert(x);
+  }
   // Actual size used to store a node could differ from size required by the structure node.
   static constexpr size_t node_size() { return sizeof(node);}
 };
@@ -73,14 +83,14 @@ struct rb_tree{
 static void dump(std::ostream& os, rb_tree::np_t np, rb_tree const & rb ){
  if (np == rb.nil()) {os << " nil";return;} 
  bool leaf = rb.deref(np).l == rb.nil() && rb.deref(np).r == rb.nil(); 
- if (!leaf) os << "(";
- os << rb.deref(np).val; os << "[parent=" << rb.deref(rb.deref(np).p).val << "]";
+ os << "(";
+ os << rb.deref(np).val;if (alg::rb_tree::is_red(rb.deref(np).c)) os << "(r) "; else os << "(b) ";  os << "[parent=" << rb.deref(rb.deref(np).p).val << "]";
  if (rb.root() == np) os << "(ROOT)"; 
  if (!leaf) os << " ";
  dump(os,rb.deref(np).l,rb);
  if (rb.deref(np).l != rb.nil() && rb.deref(rb.deref(np).l).l == rb.nil() && rb.deref(rb.deref(np).l).r == rb.nil()  ) os << " ";
  dump(os,rb.deref(np).r,rb);
- if (!leaf) os << ")";
+ os << ")";
 }
 
 std::ostream& operator << (std::ostream& os, rb_tree const & rb){
@@ -88,6 +98,25 @@ std::ostream& operator << (std::ostream& os, rb_tree const & rb){
  return os;
 }
 
+}
+
+static void test_insert(){
+  {
+    alg::rb_tree rb({
+        {.p = 0,.l = alg::rb_tree::node_size()*2, .r = alg::rb_tree::node_size()*3,.val=11,.c=0},
+        {.p = alg::rb_tree::node_size(),.l = alg::rb_tree::node_size()*4, .r = alg::rb_tree::node_size()*5,.val=2,.c=1},
+        {.p = alg::rb_tree::node_size(),.l = 0, .r = alg::rb_tree::node_size()*8,.val=14,.c=0},
+        {.p = alg::rb_tree::node_size()*2,.l = 0, .r = 0,.val=1,.c=0},
+        {.p = alg::rb_tree::node_size()*2,.l = alg::rb_tree::node_size()*6, .r = alg::rb_tree::node_size()*7,.val=7,.c=0},
+        {.p = alg::rb_tree::node_size()*5,.l = 0, .r = 0,.val=5,.c=1},
+        {.p = alg::rb_tree::node_size()*5,.l = 0, .r = 0,.val=8,.c=1},
+        {.p = alg::rb_tree::node_size(),.l = 0, .r = 0,.val=15,.c=1}
+
+    });
+    std::cout << rb << '\n';
+    rb.insert(4);
+    std::cout << rb << '\n';
+  }
 }
 
 static void test_color_ops(){
@@ -105,7 +134,7 @@ static void test_color_ops(){
     std::cout << "set_red(set_red(...)) " << "is red :" << alg::rb_tree::is_red(c) << " is black :" << alg::rb_tree::is_black(c) << '\n'; 
 }
 
-static void test_left_rotate(){
+static void test_rotate(){
   /*
   A:          left rot.   B:
       2          ==>         4
@@ -206,8 +235,9 @@ static void test_left_rotate(){
 }
 
 int main(){
-    //test_color_ops();
-    test_left_rotate();
+    test_color_ops();
+    test_rotate();
+    test_insert();
 
     return 0;
 }
